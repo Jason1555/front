@@ -212,6 +212,16 @@ export const mockApi = {
     return newFestival;
   },
 
+  updateFestival: async (id: string, data: Partial<Festival>) => {
+  await mockApiDelay();
+  const index = mockFestivals.findIndex((f) => f.id === id);
+  if (index !== -1) {
+    mockFestivals[index] = { ...mockFestivals[index], ...data };
+    return mockFestivals[index];
+  }
+  throw new Error('Фестиваль не найден');
+},
+
   // Clubs
   getClubs: async () => {
     await mockApiDelay();

@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { fetchStart, createSuccess, fetchFailure } from '../../store/slices/festivalsSlice';
+import { fetchStart, createSuccess, fetchFailure, updateSuccess } from '../../store/slices/festivalsSlice';
 import { mockApi } from '../../store/api/mockApi';
-import { FESTIVAL_STATUS } from '../../utils/constants';
 import type { Festival } from '../../types';
 
-export const FestivalForm = () => {
+interface FestivalFormProps {
+  festival?: Festival; // Если передан — режим редактирования
+}
+
+export const FestivalForm = ({ festival }: FestivalFormProps) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
-  const { isLoading, error } = useAppSelector((state) => state.festivals);
+  const { isLoading } = useAppSelector((state) => state.festivals);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(festival || {
     name: '',
     epoch: '',
     date: '',
@@ -20,127 +23,92 @@ export const FestivalForm = () => {
     requirementsFileUrl: '',
   });
 
+  useEffect(() => {
+  if (festival) {
+    setFormData({
+      name: festival.name,
+      epoch: festival.epoch,
+      date: festival.date,
+      location: festival.location,
+      requirementsFileUrl: festival.requirementsFileUrl,
+    });
+  }
+}, [festival]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+  if (!user) return;
 
-    if (!user) return;
-
-    dispatch(fetchStart());
-
-    try {
-      const newFestival: Omit<Festival, 'id' | 'createdAt'> = {
+  dispatch(fetchStart());
+  
+  try {
+    let result;
+    if (festival) {
+      // РЕЖИМ РЕДАКТИРОВАНИЯ
+      result = await mockApi.updateFestival(festival.id, formData);
+      dispatch(updateSuccess(result)); // Убедитесь, что такой экшен есть в slice
+    } else {
+      // РЕЖИМ СОЗДАНИЯ
+      result = await mockApi.createFestival({
         ...formData,
+        status: 'draft',
         organizerId: user.id,
-        status: FESTIVAL_STATUS.DRAFT,
-      };
-
-      const festival = await mockApi.createFestival(newFestival);
-      dispatch(createSuccess(festival));
-      navigate('/organizer/festivals');
-    } catch (err) {
-      dispatch(fetchFailure(err instanceof Error ? err.message : 'Ошибка создания фестиваля'));
+      });
+      dispatch(createSuccess(result));
     }
-  };
+    
+    navigate('/organizer/festivals');
+  } catch (err) {
+    dispatch(fetchFailure('Не удалось скрепить документ печатью'));
+  }
+};
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6">Создать новый фестиваль</h2>
+    <div className="max-w-2xl mx-auto my-10 p-8 bg-history-parchment border-2 border-[#8b5a2b] shadow-2xl rounded-sm font-serif">
+      <h2 className="text-3xl font-bold text-[#4a2c1a] mb-6 border-b-2 border-[#8b5a2b] pb-2 text-center italic">
+        Учреждение нового фестиваля
+      </h2>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Название</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Название фестиваля"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Эпоха</label>
-          <input
-            type="text"
-            name="epoch"
-            value={formData.epoch}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Например: IX век, XII-XIII века"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Дата</label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {[
+          { label: 'Название фестиваля', name: 'name', type: 'text' },
+          { label: 'Эпоха', name: 'epoch', type: 'text' },
+          { label: 'Дата проведения', name: 'date', type: 'date' },
+          { label: 'Место действия', name: 'location', type: 'text' },
+          { label: 'URL свитка с требованиями', name: 'requirementsFileUrl', type: 'url' },
+        ].map((field) => (
+          <div key={field.name}>
+            <label className="block text-sm font-bold text-[#4a2c1a] mb-1 uppercase tracking-wider">
+              {field.label}
+            </label>
             <input
-              type="date"
-              name="date"
-              value={formData.date}
+              type={field.type}
+              name={field.name}
+              value={(formData as any)[field.name]}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-[#fffaf0] border border-[#8b5a2b] rounded-sm focus:ring-2 focus:ring-[#8b5a2b] focus:outline-none transition-shadow"
             />
           </div>
+        ))}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Место</label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Город, регион"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            URL файла требований
-          </label>
-          <input
-            type="url"
-            name="requirementsFileUrl"
-            value={formData.requirementsFileUrl}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="https://example.com/requirements.pdf"
-          />
-        </div>
-
-        <div className="flex gap-4 pt-4">
+        <div className="flex gap-4 pt-6">
           <button
             type="submit"
             disabled={isLoading}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 rounded-lg transition"
+            className="flex-1 bg-[#8b5a2b] hover:bg-[#6d4622] text-history-parchment font-bold py-3 rounded-sm transition-all border-2 border-[#4a2c1a] shadow-md"
           >
-            {isLoading ? 'Создание...' : 'Создать фестиваль'}
+            {isLoading ? 'Чернило сохнет...' : 'Утвердить указ'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/organizer/festivals')}
-            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-lg transition"
+            className="flex-1 bg-[#d2b48c] hover:bg-[#c1a070] text-[#4a2c1a] font-bold py-3 rounded-sm transition-all border-2 border-[#8b5a2b]"
           >
             Отмена
           </button>
