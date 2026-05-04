@@ -23,7 +23,7 @@ export const FestivalList = () => {
   const getStatusBadge = (status: string) => {
     const config = STATUS_CONFIG[status] || STATUS_CONFIG[FESTIVAL_STATUS.DRAFT];
     return (
-      <span className={`border ${config.style} px-2 py-0.5 text-[10px] uppercase tracking-widest font-serif font-bold`}>
+      <span className={`border ${config.style} px-2 py-0.5 text-[10px] uppercase tracking-widest font-serif font-bold bg-history-parchment`}>
         {config.label}
       </span>
     );
@@ -33,14 +33,19 @@ export const FestivalList = () => {
 
   return (
     <div className="bg-history-parchment p-8 min-h-screen text-history-ink font-sans">
-      <h2 className="text-3xl font-serif mb-8 border-b border-history-bronze pb-4">Реестр фестивалей</h2>
+      <h2 className="text-3xl font-serif mb-8 border-b border-history-bronze pb-4">
+        Реестр фестивалей
+      </h2>
 
-      <div className="border border-history-bronze bg-white/30 shadow-sm overflow-hidden">
+      <div className="border border-history-bronze bg-history-parchment shadow-sm overflow-hidden">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b-2 border-history-bronze bg-history-bronze/10">
               {['Название', 'Эпоха', 'Дата', 'Место', 'Статус', 'Документы'].map((head) => (
-                <th key={head} className="text-left px-6 py-4 font-serif font-bold text-sm uppercase tracking-wider text-history-ink">
+                <th
+                  key={head}
+                  className="text-left px-6 py-4 font-serif font-bold text-sm uppercase tracking-wider text-history-ink"
+                >
                   {head}
                 </th>
               ))}

@@ -21,16 +21,18 @@ export const OrganizerDashboard = () => {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto p-6 font-serif text-[#4a2c1a]">
+      <div className="max-w-6xl mx-auto p-6 text-history-ink">
         {/* Шапка дэшборда */}
-        <header className="mb-8 border-b-2 border-[#8b5a2b] pb-4">
-          <h1 className="text-4xl font-bold">Кабинет Организатора</h1>
+        <header className="mb-8 border-b border-history-bronze pb-4">
+          <h1 className="text-4xl">
+            Кабинет Организатора
+          </h1>
           
           <div className="mt-6 flex gap-4">            
             {/* Кнопка создания */}
             <button
               onClick={() => navigate('/organizer/festivals/create')}
-              className="ml-auto bg-[#8b5a2b] text-[#f4e4bc] px-6 py-2 rounded-sm shadow-md hover:bg-[#6d4622] transition-colors font-bold"
+              className="ml-auto bg-history-burgundy text-history-parchment px-6 py-2 rounded-sm shadow-sm hover:bg-history-burgundy-hover transition-colors border border-history-burgundy font-bold"
             >
               📜 Учредить новый фестиваль
             </button>
@@ -38,7 +40,7 @@ export const OrganizerDashboard = () => {
         </header>
 
         {/* Контент */}
-        <main className="bg-[#fffaf0] p-6 border border-[#d2b48c] rounded shadow-inner">
+        <main className="bg-history-parchment p-6 border border-history-bronze/30 rounded-sm shadow-sm">
           {isApplications ? <ApplicationsList /> : <FestivalList />}
         </main>
       </div>
